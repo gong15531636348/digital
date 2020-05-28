@@ -1,0 +1,22 @@
+syntax = "proto3";
+package message;
+
+message Requset {
+
+}
+
+
+message Response {
+    string errno = 1;
+    string errmsg = 2;
+    repeated Area data = 3;
+}
+
+message Area {
+    int32 aid = 1;
+    string aname = 2;
+}
+
+service GetAreaSer {
+    rpc GetArea (Requset) returns (Response);
+}

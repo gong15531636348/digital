@@ -2,12 +2,20 @@ package model
 
 import (
 	"fmt"
-	"github.com/gomodule/redigo/redis"
-	"github.com/jinzhu/gorm"
-	_"github.com/jinzhu/gorm/dialects/mysql"
 	"ihome555/conf"
 	"time"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
+
+type AlertConfigType int
+
+const (
+	SwitchNotificationConfig AlertConfigType = iota
+	SwitchFailureAlert
+)
+
 type User struct {
 	ID            int           //用户编号
 	Name          string        `gorm:"size:32;unique"`  //用户名
@@ -18,6 +26,29 @@ type User struct {
 	Avatar_url    string        `gorm:"size:256" `       //用户头像路径       通过fastdfs进行图片存储
 	Houses        []*House      //用户发布的房屋信息  一个人多套房
 	Orders        []*OrderHouse //用户下的订单       一个人多次订单
+}
+
+type AlertConfig struct {
+	ID            int            `gorm:"primary_key";json:"id"`
+	APP_id        string         `json:"app_id"`
+	TT_enable     bool           `gorm:"size:5"json:"tt_enable"`
+	Email_enable  bool           `gorm:"size:5"json:"email_enable"`
+	Sms_enable    bool           `gorm:"size:5"json:"sms_enable"`
+	Call_enable   bool           `gorm:"size:5"json:"call_enable"`
+	Psa_role      []*PsaRole     `json:"psa_role"`
+	Receive_users []*ReceiveUser `json:"receive_users"`
+	Type          int            `gorm:"size:10;unique"json:"type"`
+}
+
+type PsaRole struct {
+	ID int `json:"id"`
+	//RoleName string `json:"role_name"`
+	RoleId int `json:"role_id"`
+}
+
+type ReceiveUser struct {
+	ID     int `json:"id"`
+	UserId int `json:"user_id"`
 }
 
 /* 房屋信息 table_name = house */
@@ -41,6 +72,7 @@ type House struct {
 	Images          []*HouseImage `json:"img_urls"`                                     //房屋的图片  除主要图片之外的其他图片地址
 	Orders          []*OrderHouse `json:"orders"`                                       //房屋的订单  与房屋表进行管理
 }
+
 /* 设施信息 table_name = "facility"*/ //设施信息 需要我们提前手动添加的
 type Facility struct {
 	Id     int      `json:"fid"`     //设施编号
@@ -48,14 +80,12 @@ type Facility struct {
 	Houses []*House //都有哪些房屋有此设施  与房屋表进行关联的
 }
 
-
 /* 区域信息 table_name = area */ //区域信息是需要我们手动添加到数据库中的
 type Area struct {
 	Id     int      `json:"aid"`                  //区域编号     1    2
 	Name   string   `gorm:"size:32" json:"aname"` //区域名字     昌平 海淀
 	Houses []*House `json:"houses"`               //区域所有的房屋   与房屋表进行关联
 }
-
 
 /* 房屋图片 table_name = "house_image"*/
 type HouseImage struct {
@@ -67,8 +97,8 @@ type HouseImage struct {
 /* 订单 table_name = order */
 type OrderHouse struct {
 	gorm.Model            //订单编号
-	UserId      uint      `json:"user_id"` //下单的用户编号   //与用户表进行关联
-	HouseId     uint      `json:"house_id"` //预定的房间编号   //与房屋信息进行关联
+	UserId      uint      `json:"user_id"`       //下单的用户编号   //与用户表进行关联
+	HouseId     uint      `json:"house_id"`      //预定的房间编号   //与房屋信息进行关联
 	Begin_date  time.Time `gorm:"type:datetime"` //预定的起始时间
 	End_date    time.Time `gorm:"type:datetime"` //预定的结束时间
 	Days        int       //预定总天数
@@ -80,7 +110,8 @@ type OrderHouse struct {
 }
 
 var GlobalDB *gorm.DB
-var GlobalRedis redis.Pool
+
+//var GlobalRedis redis.Pool
 
 func InitDb() error {
 	//打开数据库 拼接字符串
@@ -103,5 +134,5 @@ func InitDb() error {
 	GlobalDB = db
 
 	//表的创建
-	return db.AutoMigrate(new(User), new(House), new(Area), new(Facility), new(HouseImage), new(OrderHouse)).Error
+	return db.AutoMigrate(new(User), new(House), new(Area), new(Facility), new(HouseImage), new(OrderHouse), new(AlertConfig), new(PsaRole), new(ReceiveUser)).Error
 }
