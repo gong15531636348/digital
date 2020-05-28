@@ -21,7 +21,7 @@ func main() {
 	{
 		r1.GET("/areas", controller.GetArea)
 		r1.GET("/session", controller.GetSession)
-		//r1.POST("/alertconfig", controller.CreatAlertConfig)
+		r1.POST("/alertconfig", controller.CreatAlertConfig)
 		//r1.GET("/alertconfig",controller.GetAlertConfig)
 
 	}
